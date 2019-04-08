@@ -11,7 +11,9 @@ import android.util.Log;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.BinaryBitmap;
+import com.google.zxing.ChecksumException;
 import com.google.zxing.DecodeHintType;
+import com.google.zxing.FormatException;
 import com.google.zxing.LuminanceSource;
 import com.google.zxing.MultiFormatReader;
 import com.google.zxing.NotFoundException;
@@ -19,6 +21,7 @@ import com.google.zxing.PlanarYUVLuminanceSource;
 import com.google.zxing.ReaderException;
 import com.google.zxing.Result;
 import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.qrcode.QRCodeReader;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,12 +34,13 @@ import me.dm7.barcodescanner.core.DisplayUtils;
 
 public class ZXingScannerView extends BarcodeScannerView {
     private static final String TAG = "ZXingScannerView";
+    private EnumMap<DecodeHintType, Object> hints;
 
     public interface ResultHandler {
         void handleResult(Result rawResult);
     }
 
-    private MultiFormatReader reader;
+    private QRCodeReader reader;
     public static final List<BarcodeFormat> ALL_FORMATS = new ArrayList<>();
     private List<BarcodeFormat> mFormats;
     private ResultHandler mResultHandler;
@@ -88,10 +92,11 @@ public class ZXingScannerView extends BarcodeScannerView {
     }
 
     private void initMultiFormatReader() {
-        Map<DecodeHintType,Object> hints = new EnumMap<>(DecodeHintType.class);
-        hints.put(DecodeHintType.POSSIBLE_FORMATS, getFormats());
-        reader = new MultiFormatReader();
-        reader.setHints(hints);
+        hints = new EnumMap<>(DecodeHintType.class);
+        //hints.put(DecodeHintType.POSSIBLE_FORMATS, getFormats());
+        hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
+        reader = new QRCodeReader();
+        //reader.setHints(hints);
     }
 
     @Override
@@ -99,7 +104,7 @@ public class ZXingScannerView extends BarcodeScannerView {
         if(mResultHandler == null) {
             return;
         }
-        
+
         try {
             Camera.Parameters parameters = camera.getParameters();
             Camera.Size size = parameters.getPreviewSize();
@@ -122,7 +127,7 @@ public class ZXingScannerView extends BarcodeScannerView {
             if (source != null) {
                 BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
                 try {
-                    rawResult = reader.decodeWithState(bitmap);
+                    rawResult = reader.decode(bitmap, hints);
                 } catch (ReaderException re) {
                     // continue
                 } catch (NullPointerException npe) {
@@ -137,9 +142,13 @@ public class ZXingScannerView extends BarcodeScannerView {
                     LuminanceSource invertedSource = source.invert();
                     bitmap = new BinaryBitmap(new HybridBinarizer(invertedSource));
                     try {
-                        rawResult = reader.decodeWithState(bitmap);
+                        rawResult = reader.decode(bitmap, hints);
                     } catch (NotFoundException e) {
                         // continue
+                    } catch (FormatException e) {
+                        e.printStackTrace();
+                    } catch (ChecksumException e) {
+                        e.printStackTrace();
                     } finally {
                         reader.reset();
                     }
