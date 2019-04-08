@@ -36,7 +36,7 @@ public class ZXingScannerView extends BarcodeScannerView {
         void handleResult(Result rawResult);
     }
 
-    private MultiFormatReader mMultiFormatReader;
+    private MultiFormatReader reader;
     public static final List<BarcodeFormat> ALL_FORMATS = new ArrayList<>();
     private List<BarcodeFormat> mFormats;
     private ResultHandler mResultHandler;
@@ -90,8 +90,8 @@ public class ZXingScannerView extends BarcodeScannerView {
     private void initMultiFormatReader() {
         Map<DecodeHintType,Object> hints = new EnumMap<>(DecodeHintType.class);
         hints.put(DecodeHintType.POSSIBLE_FORMATS, getFormats());
-        mMultiFormatReader = new MultiFormatReader();
-        mMultiFormatReader.setHints(hints);
+        reader = new MultiFormatReader();
+        reader.setHints(hints);
     }
 
     @Override
@@ -122,7 +122,7 @@ public class ZXingScannerView extends BarcodeScannerView {
             if (source != null) {
                 BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
                 try {
-                    rawResult = mMultiFormatReader.decodeWithState(bitmap);
+                    rawResult = reader.decodeWithState(bitmap);
                 } catch (ReaderException re) {
                     // continue
                 } catch (NullPointerException npe) {
@@ -130,18 +130,18 @@ public class ZXingScannerView extends BarcodeScannerView {
                 } catch (ArrayIndexOutOfBoundsException aoe) {
 
                 } finally {
-                    mMultiFormatReader.reset();
+                    reader.reset();
                 }
 
                 if (rawResult == null) {
                     LuminanceSource invertedSource = source.invert();
                     bitmap = new BinaryBitmap(new HybridBinarizer(invertedSource));
                     try {
-                        rawResult = mMultiFormatReader.decodeWithState(bitmap);
+                        rawResult = reader.decodeWithState(bitmap);
                     } catch (NotFoundException e) {
                         // continue
                     } finally {
-                        mMultiFormatReader.reset();
+                        reader.reset();
                     }
                 }
             }
