@@ -1,1 +1,11 @@
-include "core", "zxing", "zxing-sample"
+Properties properties = new Properties()
+properties.load(new FileReader(System.getProperty("user.dir") + "/local.properties"))
+
+def dm77Path = properties.getProperty('dm77.core.path').toString()
+def zxingPath = properties.getProperty('zxing.core.path').toString()
+if((dm77Path == null || dm77Path.trim().isEmpty()) || (zxingPath == null || zxingPath.trim().isEmpty()))
+    throw new NullPointerException('Path is not defined')
+
+include "dm77-core", "zxing-core", "zxing-sample"
+project(':dm77-core').projectDir = new File(dm77Path)
+project(':zxing-core').projectDir = new File(zxingPath)
